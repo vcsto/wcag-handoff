@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WCAG Changes &mdash; Handoff Notes</title>
+    <style>
+        :root {
+            --purple: #6F2495;
+            --ink: #1f2937;
+            --muted: #6b7280;
+            --line: #e5e7eb;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: Inter, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+            color: var(--ink);
+            background: #f7f7fb;
+            margin: 0;
+            padding: 32px 20px;
+            line-height: 1.5;
+        }
+        .wrap { max-width: 900px; margin: 0 auto; }
+        h1 { font-size: 24px; margin: 0 0 4px; }
+        p.sub { color: var(--muted); margin: 0 0 24px; }
+        .changes { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+        button {
+            font: inherit;
+            font-weight: 600;
+            color: #fff;
+            background: var(--purple);
+            border: 0;
+            border-radius: 30px;
+            padding: 12px 22px;
+            cursor: pointer;
+        }
+        button:hover { filter: brightness(1.07); }
+        button:focus-visible { outline: 3px solid #1570EF; outline-offset: 2px; }
+        button.tab[aria-pressed="false"] { background: #e9e3f0; color: var(--purple); }
+        button.copy { padding: 8px 16px; font-size: 14px; }
+        .panel {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px -6px rgba(0,0,0,.12);
+        }
+        .panel[hidden] { display: none; }
+        .panel-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+        .panel-head h2 { font-size: 17px; margin: 0; flex: 1 1 auto; }
+        .status { color: #15803d; font-weight: 600; min-height: 1.2em; font-size: 14px; }
+        textarea {
+            width: 100%;
+            min-height: 420px;
+            font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+            font-size: 13px;
+            line-height: 1.55;
+            color: var(--ink);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 14px;
+            resize: vertical;
+            white-space: pre;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1>WCAG Changes &mdash; Handoff Notes</h1>
+        <p class="sub">Pick a change below to view its handoff instructions, then copy them to paste back to yourself.</p>
+
+        <div class="changes">
+            <button type="button" class="tab" data-target="panel1" aria-pressed="true">Change 1 &mdash; Video Detail headings</button>
+            <button type="button" class="tab" data-target="panel2" aria-pressed="false">Change 2 &mdash; Playlists white text &rarr; black</button>
+            <button type="button" class="tab" data-target="panel3" aria-pressed="false">Change 3 &mdash; Download Transcript "opens in new tab"</button>
+            <button type="button" class="tab" data-target="panel4" aria-pressed="false">Change 4 &mdash; Account Library Upload a Video single h1</button>
+            <button type="button" class="tab" data-target="panel5" aria-pressed="false">Change 5 &mdash; Video Activities Upload wizard duplicate h1</button>
+        </div>
+
+        <!-- ============ CHANGE 1 ============ -->
+        <section class="panel" id="panel1">
+            <div class="panel-head">
+                <h2>Change 1 &mdash; Video Detail page heading cleanup</h2>
+                <button type="button" class="copy" data-note="note1">Copy instructions</button>
+                <span class="status" data-status="note1" role="status" aria-live="polite"></span>
+            </div>
+            <textarea id="note1" readonly spellcheck="false">CHANGE REQUEST: Video Detail page heading cleanup
+Branch: qa
+Repo path prefix: src/AF.Web/
+
+GOAL
+----
+The Teaching Channel video Detail page (route /TeachingChannel/Detail/{id}) had no <h1>
+and its in-panel section labels were all <h2> headings. Restore a single, correct page
+<h1> (the video title, read by screen readers) and stop the tab section labels from being
+headings. Keep everything visually identical.
+
+CONTEXT / WHY
+-------------
+- The page used to have a visible <h1 id="video-page-title">@Model.Title</h1> inside
+  _TCMetadata.cshtml. PR 7216 (DP-10533, reflection video screen) deleted it, so the page
+  ended up with ZERO h1s.
+- Because that visible h1 used to exist, Detail.cshtml suppressed the header partial's
+  built-in invisible h1 (to avoid two h1s). With the visible one gone, the suppression now
+  just leaves the page with no h1 at all.
+- The header partial already builds the right text: heading.MainHeading = video title.
+
+FILE 1: Views/TeachingChannel/Detail.cshtml
+-------------------------------------------
+Stop suppressing the header's invisible h1 so it renders the video title.
+
+Line ~63 (authenticated header) -- remove the SuppressHiddenH1 flag:
+  FROM:
+    @Html.Partial("_HeaderTeachingChannel", new ViewDataDictionary { { "Heading", heading }, { "SuppressHiddenH1", true } })
+  TO:
+    @Html.Partial("_HeaderTeachingChannel", new ViewDataDictionary { { "Heading", heading } })
+
+Line ~67 (proxy header) -- same change:
+  FROM:
+    @Html.Partial("_HeaderProxyTeachingChannel", new ViewDataDictionary { { "Heading", heading }, { "SuppressHiddenH1", true } })
+  TO:
+    @Html.Partial("_HeaderProxyTeachingChannel", new ViewDataDictionary { { "Heading", heading } })
+
+Result: _HeaderTeachingChannel.cshtml (~line 953) and _HeaderProxyTeachingChannel.cshtml
+(~line 103) now render <h1 class="visually-hidden">@heading.MainHeading</h1>, and
+heading.MainHeading is already set to Model.TeachingChannelVideoDetail.Title at the top of
+Detail.cshtml (~line 11). So the page's single h1 = the video title (visually hidden).
+
+FILE 2: Views/TeachingChannel/_TCMetadata.cshtml
+------------------------------------------------
+(A) Put the video title back inside the Description panel, but as PLAIN TEXT (a <div>),
+    NOT a heading -- it must not be an h1/h2 (the header h1 already covers the title).
+    First line inside the description tabpanel (~line 379), right after:
+        <div class="detail-tab-panel active" id="description" role="tabpanel" aria-labelledby="tab-description">
+    ADD:
+        <div id="video-page-title" class="detail-tab-h3 video-detail-page-title d-inline-block mr-2 mb-3">@Model.Title</div>
+    (The .detail-tab-h3 class keeps the original heading-sized look; input.css:742 styles it
+    by class, not by tag, so a <div> looks identical to the old <h2>.)
+
+(B) Demote the five in-panel section labels from <h2> to <div> so they are no longer
+    headings (same class, same text -> identical appearance). Change the tag only:
+        <h2 class="detail-tab-h3 d-inline-block ml-3 text-left">Standard Alignment</h2>  -> <div ...>Standard Alignment</div>   (~line 391)
+        <h2 class="detail-tab-h3 d-inline-block ml-3">Thought Starters</h2>              -> <div ...>Thought Starters</div>     (~line 403)
+        <h2 class="detail-tab-h3 d-inline-block ml-3 text-left">Materials</h2>           -> <div ...>Materials</div>            (~line 420)
+        <h2 class="detail-tab-h3 d-inline-block ml-3 text-left">Transcript</h2>          -> <div ...>Transcript</div>           (~line 460)
+        <h2 class="detail-tab-h3 d-inline-block ml-3 text-left">About the Video</h2>     -> <div ...>About the Video</div>      (~line 500)
+    (Keep all classes; only h2 -> div and the matching closing tag.)
+    Leave the <h3> "School Details" and "Teachers" sub-labels inside the About-the-Video
+    panel as-is.
+
+EXPECTED END STATE (heading outline of the page)
+------------------------------------------------
+  h1 (visually hidden, header)  = video title   <-- the only heading title; screen readers read this
+  h2 "Related Videos"           = unchanged
+  Everything else in the detail card (title in Description box, section labels) = plain text, no headings.
+
+VERIFY
+------
+- View source / a11y tree: exactly ONE <h1> on the page, text = the video title.
+- Visually nothing changes (title in Description box and the five tab labels look the same).
+- Switching tabs still works; the title in the Description box only shows on the Description
+  tab (it lives inside that panel, which is display:none when inactive) -- that's fine because
+  the real page h1 is the always-present hidden one in the header.
+</textarea>
+        </section>
+
+        <!-- ============ CHANGE 2 ============ -->
+        <section class="panel" id="panel2" hidden>
+            <div class="panel-head">
+                <h2>Change 2 &mdash; Playlists page white text &rarr; black</h2>
+                <button type="button" class="copy" data-note="note2">Copy instructions</button>
+                <span class="status" data-status="note2" role="status" aria-live="polite"></span>
+            </div>
+            <textarea id="note2" readonly spellcheck="false">CHANGE REQUEST: Playlists page -- white "no shared playlists" message is unreadable
+Branch: qa
+Repo path prefix: src/AF.Web/
+
+GOAL
+----
+On the Playlists page (route /TeachingChannel/PlaylistsPage), the message under the
+"<Org> Playlists" (Teaching Channel CSM Playlists) heading is forced white, so it is
+nearly invisible on the light pink/purple background. Make it readable (WCAG 1.4.3
+contrast). This block only renders for Coach / Org-Admin users when there are no account
+playlists.
+
+FILE: Views/TeachingChannel/PlaylistsPage.cshtml
+------------------------------------------------
+Line ~75 -- change the inline text color from white to black:
+  FROM:
+    <span style="color:#FFF">No playlists have been shared within your organization yet. Visit the My Playlists page to start sharing your playlists with your organization.</span>
+  TO:
+    <span style="color:#000000">No playlists have been shared within your organization yet. Visit the My Playlists page to start sharing your playlists with your organization.</span>
+
+NOTE
+----
+The white was a leftover from a dark background. The sibling messages already use dark
+text -- PlaylistsPage.cshtml ~line 89 ("No playlists have been shared.") and the Dashboard
+copy in Views/Dashboard/Index.cshtml ~line 667 both render with the default dark color.
+
+VERIFY
+------
+- As a Coach/Org-Admin with no account playlists, the message under "<Org> Playlists" is
+  now black and clearly readable on the light background.
+</textarea>
+        </section>
+
+        <!-- ============ CHANGE 3 ============ -->
+        <section class="panel" id="panel3" hidden>
+            <div class="panel-head">
+                <h2>Change 3 &mdash; Download Transcript link "(opens in new tab)"</h2>
+                <button type="button" class="copy" data-note="note3">Copy instructions</button>
+                <span class="status" data-status="note3" role="status" aria-live="polite"></span>
+            </div>
+            <textarea id="note3" readonly spellcheck="false">CHANGE REQUEST: Video Detail transcript link -- warn that it opens a new tab
+Branch: qa
+Repo path prefix: src/AF.Web/
+
+GOAL
+----
+On the video Detail page (route /TeachingChannel/Detail/{id}), Transcript tab, the
+"Download Transcript" link uses target="_blank" (opens a new browser tab) but gives no
+warning. Screen readers announce only "Download Transcript, link". Add a screen-reader
+announcement that it opens in a new tab (WCAG technique G201 / 3.2.5 best practice). No
+visible change.
+
+FILE: Views/TeachingChannel/_TCMetadata.cshtml
+----------------------------------------------
+Inside the Transcript tabpanel, the transcript download link (~line 473-480):
+    <a class="btn btn-edit-progress mb-3 gray-700-color font-600 text-5" href="@transcript.FileReferenceId" target="_blank">
+        ... download icon (aria-hidden) ...
+        <span class="mr-2" id="headingthree"></span>Download Transcript
+    </a>
+
+Line ~479 -- append a visually-hidden note to the link text:
+  FROM:
+    <span class="mr-2" id="headingthree"></span>Download Transcript
+  TO:
+    <span class="mr-2" id="headingthree"></span>Download Transcript<span class="visually-hidden"> (opens in new tab)</span>
+
+NOTE
+----
+- The .visually-hidden utility (Content/style/style.css ~line 8542) hides the text from
+  sighted users while keeping it in the accessible name.
+- Resulting accessible name: "Download Transcript (opens in new tab)".
+- The download SVG already has aria-hidden="true", so no icon noise.
+
+VERIFY
+------
+- Screen reader announces "Download Transcript (opens in new tab), link".
+- No visible change to the button.
+</textarea>
+        </section>
+
+        <!-- ============ CHANGE 4 ============ -->
+        <section class="panel" id="panel4" hidden>
+            <div class="panel-head">
+                <h2>Change 4 &mdash; Account Library "Upload a Video" single h1</h2>
+                <button type="button" class="copy" data-note="note4">Copy instructions</button>
+                <span class="status" data-status="note4" role="status" aria-live="polite"></span>
+            </div>
+            <textarea id="note4" readonly spellcheck="false">CHANGE REQUEST: Account Library "Upload a Video" page -- one true h1, no h2s
+Branch: qa
+Repo path prefix: src/AF.Web/
+
+GOAL
+----
+On the Account Library upload page (route /Resource/CreateUpdateResourceVideo?groupAccountId=...),
+the visible "Upload a Video" heading was an <h2>, and the page's only <h1> was the invisible
+one leaking from the header partial (it announced the account/library name, not the page).
+The page is a 2-step wizard ("Upload a Video" then "Add Documentation"). Give EACH step its own
+visible <h1> (the steps are mutually exclusive, so only one h1 is ever exposed), suppress the
+leaking header h1, and demote the modal dialog titles so there are no stray h2s. Keep everything
+visually identical.
+
+CONTEXT / WHY
+-------------
+- The header partial _HeaderTeachingChannel.cshtml (~line 953-955) renders
+  <h1 class="visually-hidden">@heading.MainHeading</h1> unless ViewBag.SuppressHiddenH1 == true.
+  heading.MainHeading here = "<Account> Library", so the only h1 named the library, not the page.
+- @Html.Partial is given a NEW ViewDataDictionary, which does NOT inherit ViewBag.SuppressHiddenH1
+  from the page. The flag must be passed INSIDE that dictionary (classic Html.Partial-blocks-ViewBag).
+- Heading text styling is class-driven: .text-3 (Content/style/content/text.css:44) sets
+  font-size:18px/weight 600/line-height 26px; .modal-title (bootstrap.css:6055) sets margin-bottom:0;
+  Bootstrap Reboot (bootstrap.css:76-79) zeroes margin-top on all h1..h6. So swapping the tag
+  (h2 -> h1, or h2 -> div) does NOT change appearance.
+
+FILE: Views/Resource/CreateUpdateResourceVideo.cshtml
+-----------------------------------------------------
+(1) ~Line 31 -- suppress the leaking hidden h1 by passing the flag inside the partial dictionary:
+  FROM:
+    @Html.Partial("_HeaderTeachingChannel", new ViewDataDictionary { { "Heading", heading } })
+  TO:
+    @Html.Partial("_HeaderTeachingChannel", new ViewDataDictionary { { "Heading", heading }, { "SuppressHiddenH1", true } })
+
+(2) ~Line 57 -- promote the visible page title from h2 to h1:
+  FROM:
+    <h2 class="modal-title text-3">Upload a Video</h2>
+  TO:
+    <h1 class="modal-title text-3">Upload a Video</h1>
+
+(3) This page is a 2-STEP WIZARD. Step 1 = "Upload a Video" (.js-step1-resource-video-upload),
+    Step 2 = "Add Documentation" (.js-step2-resource-video-upload). resourceLibrary.js (~671-672)
+    toggles them with u-isHidden (display:none !important), so only ONE step is visible at a time.
+    Each step's title is its own h1 -> the document still exposes exactly one visible h1 at any
+    moment. Promote BOTH step titles to h1; demote ONLY the modal dialog titles.
+
+  ~Line 261 (step 2 page title -> h1, NOT a div):
+    FROM: <h2 class="modal-title text-3">Add Documentation</h2>
+    TO:   <h1 class="modal-title text-3">Add Documentation</h1>
+
+  ~Line 375 (modal #addResourceLibLink, aria-labelledby="exampleModalLongTitle" -> demote, keep id):
+    FROM: <h2 class="modal-title text-3" id="exampleModalLongTitle">Add a Link</h2>
+    TO:   <div class="modal-title text-3" id="exampleModalLongTitle">Add a Link</div>
+
+  ~Line 415 (modal #addResourceLibDcoument, aria-labelledby="addResourceLibDcoumentTitle" -> demote, keep id):
+    FROM: <h2 class="modal-title text-3" id="addResourceLibDcoumentTitle">Upload a File</h2>
+    TO:   <div class="modal-title text-3" id="addResourceLibDcoumentTitle">Upload a File</div>
+
+EXPECTED END STATE (heading outline of the page)
+------------------------------------------------
+  Step 1 visible: h1 "Upload a Video"      <-- the only visible heading
+  Step 2 visible: h1 "Add Documentation"   <-- the only visible heading
+  (two h1 elements in source, but the steps are mutually exclusive so only one is ever
+   exposed; no h2s anywhere; "Add a Link" / "Upload a File" modal titles are plain styled text)
+
+VERIFY
+------
+- a11y tree / headings scan on STEP 1: exactly one heading, h1 = "Upload a Video".
+- Advance to STEP 2 ("Add Documentation"): exactly one heading, h1 = "Add Documentation".
+  (Important: step 1 is display:none here, so its h1 is correctly NOT exposed -- no double h1.)
+- Nothing moves visually: both step titles and the two modal titles look identical to before.
+- Open the Add a Link and Upload a File modals: screen reader still announces them as named
+  dialogs ("Add a Link, dialog" / "Upload a File, dialog").
+</textarea>
+        </section>
+
+        <!-- ============ CHANGE 5 ============ -->
+        <section class="panel" id="panel5" hidden>
+            <div class="panel-head">
+                <h2>Change 5 &mdash; Video Activities "Upload Video" wizard duplicate h1</h2>
+                <button type="button" class="copy" data-note="note5">Copy instructions</button>
+                <span class="status" data-status="note5" role="status" aria-live="polite"></span>
+            </div>
+            <textarea id="note5" readonly spellcheck="false">CHANGE REQUEST: Video Activities "Upload Video" wizard -- kill the duplicate (hidden) h1
+Branch: qa
+Repo path prefix: src/AF.Web/
+
+GOAL
+----
+On the Video Activities upload flow (route /ActivityCenter/CreateVideoObservation), each step
+shows TWO h1s: the invisible header h1 "Video Activities" PLUS the visible step title. Make the
+visible step title the ONLY h1 on every step. No visual change.
+
+CONTEXT / WHY
+-------------
+- This one view is a 2-step wizard:
+    Step 1 "Upload a Video"    (.js-createVideoObservationView-step1View)        -> visible <h1>
+    Step 3 "Add Documentation" (.js-createVideoObservationView-step3View, u-isHidden) -> visible <h1>
+  Both step titles are already <h1>. The steps are mutually exclusive (u-isHidden = display:none,
+  utils.css:68), so only one visible step h1 is exposed at a time.
+- The header partial _HeaderTeachingChannel.cshtml (~953-955) renders
+  <h1 class="visually-hidden">@heading.MainHeading</h1> (here "Video Activities") unless
+  ViewBag.SuppressHiddenH1 == true. The page ALREADY set ViewBag.SuppressHiddenH1 = true, but it
+  had no effect: @Html.Partial is given a NEW ViewDataDictionary that does NOT inherit the page
+  ViewBag (classic Html.Partial-blocks-ViewBag). So the hidden h1 still rendered -> every step had
+  hidden "Video Activities" + the visible step title = 2 h1s.
+
+FILE: Views/ActivityCenter/CreateVideoObservation.cshtml
+--------------------------------------------------------
+(1) ~Line 27 -- pass the flag INSIDE the partial dictionary so suppression actually works:
+  FROM:
+    @Html.Partial("_HeaderTeachingChannel", new ViewDataDictionary { { "Heading", heading } })
+  TO:
+    @Html.Partial("_HeaderTeachingChannel", new ViewDataDictionary { { "Heading", heading }, { "SuppressHiddenH1", true } })
+
+(2) ~Line 12 -- remove the now-dead page-level line (it never reaches the partial):
+  DELETE:
+    ViewBag.SuppressHiddenH1 = true;
+
+WHY THIS IS SAFE FOR BOTH STEPS
+-------------------------------
+The hidden h1 is rendered ONCE in the shared <header> (outside both steps), so suppressing it
+fixes BOTH steps at once -- each is left with exactly ONE visible h1 (Step 1 "Upload a Video",
+Step 3 "Add Documentation"). It does NOT remove either visible step title, and no step is left
+heading-less (each already has its own h1). The modal title "Add New Link"
+(<h2 id="js-createObsAddLinkModalLabel">, ~line 353) is left as-is -- it is a dialog heading,
+exposed only while that modal is open.
+
+EXPECTED END STATE (heading outline)
+------------------------------------
+  Step 1 visible: h1 "Upload a Video"      <-- only exposed heading
+  Step 3 visible: h1 "Add Documentation"   <-- only exposed heading
+  (hidden "Video Activities" h1 no longer rendered)
+
+VERIFY
+------
+- a11y tree / headings scan on the Add Documentation step: exactly ONE h1 = "Add Documentation".
+- Click Back to the Upload step: exactly ONE h1 = "Upload a Video" (no hidden "Video Activities").
+- Nothing changes visually on either step.
+
+NOT IN SCOPE (separate page, separate follow-up)
+------------------------------------------------
+The standalone "Add Documentation" page Views/ActivityCenter/CreateVideoObservationResources.cshtml
+(action CreateVideoObservationResources, reached from an existing activity's "Add Documentation"
+link) still uses <h2>Add Documentation</h2> and does not suppress its hidden h1. Not changed here.
+</textarea>
+        </section>
+    </div>
+
+    <script>
+        (function () {
+            // Tab buttons toggle which change panel is visible.
+            var tabs = document.querySelectorAll('button.tab');
+            tabs.forEach(function (tab) {
+                tab.addEventListener('click', function () {
+                    tabs.forEach(function (t) {
+                        var on = (t === tab);
+                        t.setAttribute('aria-pressed', on ? 'true' : 'false');
+                        document.getElementById(t.dataset.target).hidden = !on;
+                    });
+                });
+            });
+
+            // Copy buttons copy their panel's instructions.
+            document.querySelectorAll('button.copy').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var ta = document.getElementById(btn.dataset.note);
+                    var status = document.querySelector('[data-status="' + btn.dataset.note + '"]');
+                    function done() {
+                        status.textContent = 'Copied ✓';
+                        setTimeout(function () { status.textContent = ''; }, 2500);
+                    }
+                    function fallback() {
+                        ta.focus(); ta.select();
+                        try { document.execCommand('copy'); done(); }
+                        catch (e) { status.textContent = 'Press Ctrl+C to copy.'; }
+                    }
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(ta.value).then(done, fallback);
+                    } else {
+                        fallback();
+                    }
+                });
+            });
+        })();
+    </script>
+</body>
+</html>
