@@ -23,7 +23,12 @@
         .wrap { max-width: 900px; margin: 0 auto; }
         h1 { font-size: 24px; margin: 0 0 4px; }
         p.sub { color: var(--muted); margin: 0 0 24px; }
+        .batches { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+        button.batch { background: #1f2937; }
+        button.batch[aria-pressed="false"] { background: #e5e7eb; color: #1f2937; }
         .changes { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+        .changes[hidden] { display: none; }
+        .batch-caption { flex-basis: 100%; margin: 0 0 2px; color: var(--muted); font-size: 14px; }
         button {
             font: inherit;
             font-weight: 600;
@@ -70,12 +75,32 @@
         <h1>WCAG Changes &mdash; Handoff Notes</h1>
         <p class="sub">Pick a change below to view its handoff instructions, then copy them to paste back to yourself.</p>
 
-        <div class="changes">
+        <div class="batches">
+            <button type="button" class="batch" data-batch="1" aria-pressed="true">1st batch</button>
+            <button type="button" class="batch" data-batch="2" aria-pressed="false">2nd batch</button>
+        </div>
+
+        <div class="changes" data-batch-group="1">
+            <p class="batch-caption">Batch 1 &mdash; earlier fixes: Video Detail headings, Playlists text colour, Transcript &ldquo;new tab&rdquo;, and Upload-page H1 cleanup.</p>
             <button type="button" class="tab" data-target="panel1" aria-pressed="true">Change 1 &mdash; Video Detail headings</button>
             <button type="button" class="tab" data-target="panel2" aria-pressed="false">Change 2 &mdash; Playlists white text &rarr; black</button>
             <button type="button" class="tab" data-target="panel3" aria-pressed="false">Change 3 &mdash; Download Transcript "opens in new tab"</button>
             <button type="button" class="tab" data-target="panel4" aria-pressed="false">Change 4 &mdash; Account Library Upload a Video single h1</button>
             <button type="button" class="tab" data-target="panel5" aria-pressed="false">Change 5 &mdash; Video Activities Upload wizard duplicate h1</button>
+        </div>
+
+        <div class="changes" data-batch-group="2" hidden>
+            <p class="batch-caption">Batch 2 &mdash; header logo non-interactable, Playlists sort keyboard, the Add Documentation / Add Link modal (required fields, inert background, decorative checkmark), the Account Library Add a Link / Upload a File page h1s, the Library / Activity Reports tab headings, and the Activity Center clear-search &times; keyboard access.</p>
+            <button type="button" class="tab" data-target="panel6" aria-pressed="false">Change 6 &mdash; Header logo non-interactable</button>
+            <button type="button" class="tab" data-target="panel7" aria-pressed="false">Change 7 &mdash; Playlists Sort A&rarr;Z keyboard</button>
+            <button type="button" class="tab" data-target="panel8" aria-pressed="false">Change 8 &mdash; Add Link modal required fields</button>
+            <button type="button" class="tab" data-target="panel9" aria-pressed="false">Change 9 &mdash; Add Link modal background inert</button>
+            <button type="button" class="tab" data-target="panel10" aria-pressed="false">Change 10 &mdash; Documentation checkmark decorative</button>
+            <button type="button" class="tab" data-target="panel11" aria-pressed="false">Change 11 &mdash; Account Library Add a Link single h1</button>
+            <button type="button" class="tab" data-target="panel12" aria-pressed="false">Change 12 &mdash; Account Library Upload a File single h1</button>
+            <button type="button" class="tab" data-target="panel13" aria-pressed="false">Change 13 &mdash; Library Reports tabs as headings</button>
+            <button type="button" class="tab" data-target="panel14" aria-pressed="false">Change 14 &mdash; Activity Reports h1 + per-report headings</button>
+            <button type="button" class="tab" data-target="panel15" aria-pressed="false">Change 15 &mdash; Activity Center clear-search &times; keyboard</button>
         </div>
 
         <!-- ============ CHANGE 1 ============ -->
@@ -406,19 +431,742 @@ The standalone "Add Documentation" page Views/ActivityCenter/CreateVideoObservat
 link) still uses <h2>Add Documentation</h2> and does not suppress its hidden h1. Not changed here.
 </textarea>
         </section>
+
+        <!-- ============ CHANGE 6 ============ -->
+        <section class="panel" id="panel6" hidden>
+            <div class="panel-head">
+                <h2>Change 6 &mdash; Header Teaching Channel logo non-interactable</h2>
+                <button type="button" class="copy" data-note="note6">Copy instructions</button>
+                <span class="status" data-status="note6" role="status" aria-live="polite"></span>
+            </div>
+            <textarea id="note6" readonly spellcheck="false">CHANGE REQUEST: Header Teaching Channel logo -- make it non-interactable (no mouse click / hover cursor)
+Branch: qa
+Repo path prefix: src/AF.Web/
+
+GOAL
+----
+In the purple Teaching Channel header band, the brand logo (the butterfly + "Teaching Channel"
+wordmark) was already excluded from keyboard tab order and from screen readers, but it was still a
+real link to the Dashboard: hovering showed the pointer/hand cursor and clicking navigated. Make the
+logo purely decorative -- non-interactable for the mouse too -- with NO markup change. The Home nav
+link still provides the path to the Dashboard.
+
+CONTEXT / WHY
+-------------
+- The logo is <a href="/Dashboard" class="tc-brand-link" tabindex="-1" aria-hidden="true"> wrapping an
+  <img alt="" role="presentation" aria-hidden="true">. The tabindex/aria-hidden/alt attributes only
+  remove it from KEYBOARD tab order and screen readers -- they do NOT stop mouse clicks.
+- .tc-brand-link explicitly set pointer-events:auto + cursor:pointer, so the mouse still saw a
+  clickable link (hand cursor on hover, navigates on click).
+- Fix is CSS-only: pointer-events:none makes the anchor (and its child img) inert to the mouse;
+  cursor:default keeps the normal arrow. The <a> markup is left intact.
+
+FILE: Views/Shared/_HeaderTeachingChannel.cshtml
+------------------------------------------------
+In the .tc-brand-link rule (in the page's <style> block, ~line 165), change two declarations:
+  FROM:
+    .tc-brand-link {
+        position: relative;
+        z-index: 10000;
+        display: inline-flex;
+        align-items: center;
+        isolation: isolate;
+        pointer-events: auto;
+        cursor: pointer;
+    }
+  TO:
+    .tc-brand-link {
+        position: relative;
+        z-index: 10000;
+        display: inline-flex;
+        align-items: center;
+        isolation: isolate;
+        pointer-events: none;
+        cursor: default;
+    }
+
+(Optional, recommended) update the two stale comments so they describe the new behavior:
+  - The comment above .tc-brand-link ("...helps hit-testing + NVDA mouse") -> note the logo is now
+    decorative and non-interactable (pointer-events:none).
+  - The inline Razor comment above the <a> ("Logo: mouse-only link to Dashboard...") -> note it is now
+    purely decorative; Home nav provides the path to the Dashboard.
+
+WHY THIS IS SAFE
+----------------
+- No keyboard/AT regression: the logo was never keyboard- or screen-reader-reachable (tabindex="-1",
+  aria-hidden, empty alt). The Home nav link remains the announced, tab-reachable route to the Dashboard.
+- pointer-events:none on the anchor also makes the child <img> inert, so no extra rule is needed.
+- No visual change: logo size/position unchanged; only the hover cursor differs (default arrow instead
+  of the pointer hand).
+
+VERIFY
+------
+- Hover the header logo: cursor stays the normal arrow (no hand), and clicking it does nothing.
+- Keyboard Tab order and screen-reader output are unchanged (logo still skipped).
+- Home nav link still navigates to the Dashboard.
+</textarea>
+        </section>
+
+        <!-- ============ CHANGE 7 ============ -->
+        <section class="panel" id="panel7" hidden>
+            <div class="panel-head">
+                <h2>Change 7 &mdash; Teaching Channel Playlists "Sort A&rarr;Z" keyboard operability</h2>
+                <button type="button" class="copy" data-note="note7">Copy instructions</button>
+                <span class="status" data-status="note7" role="status" aria-live="polite"></span>
+            </div>
+            <textarea id="note7" readonly spellcheck="false">CHANGE REQUEST: Playlists "Sort A->Z" toggle -- make it keyboard operable
+Branch: qa
+Repo path prefix: src/AF.Web/
+
+GOAL
+----
+On the Teaching Channel Playlists page (route /TeachingChannel/PlaylistDetails?type=tcPlaylist),
+the "Sort A->Z / Sort Z->A" control can only be used with a mouse. Make it reachable and operable
+by keyboard (Tab to focus, Enter/Space to toggle) and expose it as a button to assistive tech.
+No visual change.
+
+CONTEXT / WHY (WCAG 2.1.1 Keyboard, 4.1.2 Name/Role/Value)
+----------------------------------------------------------
+- The control is a plain <span id="sortToggle"> with only onclick="toggleSort()". It has:
+    * no tabindex  -> not focusable, keyboard users can never reach it;
+    * no role      -> AT does not expose it as a control;
+    * no keydown   -> Enter/Space do nothing (a span with onclick does NOT fire on keyboard
+                      the way a native <button> does).
+- toggleSort() (in PlaylistDetails.cshtml) already updates the label text and an aria-label at
+  runtime; we add a matching server-rendered aria-label so the initial accessible name is correct
+  before any interaction.
+- NOTE: there are two #sortToggle spans (desktop + mobile, shown mutually exclusively). The
+  duplicate id is intentionally left as-is and is out of scope here.
+
+FILE 1: Views/TeachingChannel/_TCPlaylistDetails.cshtml
+------------------------------------------------------
+There are TWO identical sort-row spans (desktop ~line 93, mobile ~line 119). Apply the SAME change
+to BOTH.
+  FROM:
+    <span id="sortToggle" class="sort-option" style="cursor: pointer;" onclick="toggleSort()">
+        @@(sortType != "desc" ? "Sort A->Z up" : "Sort Z->A down")
+    </span>
+  TO:
+    <span id="sortToggle" class="sort-option" style="cursor: pointer;" role="button" tabindex="0" onclick="toggleSort()" onkeydown="handleSortKeydown(event)" aria-label="@@(sortType != "desc" ? "Sort videos alphabetically from A to Z" : "Sort videos alphabetically from Z to A")">
+        @@(sortType != "desc" ? "Sort A->Z up" : "Sort Z->A down")
+    </span>
+  (Keep the existing arrow glyphs in the visible text exactly as they are -- "Sort A->Z up" /
+   "Sort Z->A down" above is shorthand for the current "Sort A->Z up-triangle" / "Sort Z->A
+   down-triangle" content; only add the new attributes, do not change the visible label text.)
+
+FILE 2: Views/TeachingChannel/PlaylistDetails.cshtml
+----------------------------------------------------
+Add a keydown helper right after the toggleSort() function (~line 346):
+  AFTER:
+    getPlaylistDetailsUX(selectedType, sort);
+    }
+  ADD:
+    // Activate the sort toggle with Enter or Space (it is a role="button" span, not a native button).
+    function handleSortKeydown(event) {
+        if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+            event.preventDefault();
+            toggleSort();
+        }
+    }
+
+VERIFY
+------
+- Tab reaches the "Sort A->Z" control and shows a visible focus ring.
+- Enter and Space both toggle the sort (label flips A->Z <-> Z->A; the list re-sorts).
+- Space does NOT scroll the page while the toggle is focused.
+- Screen reader announces it as a button with the direction-appropriate name.
+- Mouse behavior and appearance are unchanged.
+</textarea>
+        </section>
+
+        <!-- ============ CHANGE 8 ============ -->
+        <section class="panel" id="panel8" hidden>
+            <div class="panel-head">
+                <h2>Change 8 &mdash; "Add New Link" modal: mark required fields</h2>
+                <button type="button" class="copy" data-note="note8">Copy instructions</button>
+                <span class="status" data-status="note8" role="status" aria-live="polite"></span>
+            </div>
+            <textarea id="note8" readonly spellcheck="false">CHANGE REQUEST: "Add New Link" modal -- mark the required fields
+Branch: qa
+Repo path prefix: src/AF.Web/
+
+GOAL
+----
+On the Video Activities upload flow (route /ActivityCenter/CreateVideoObservation), the
+"Add Documentation" step has an "Add Link" button that opens the "Add New Link" modal. Both
+modal fields (Link URL, Display Text) are required -- the confirm handler rejects empty values
+("Please enter both fields.") -- but they were not marked required: no required/aria-required,
+no visible indicator, and the labels were visually-hidden so sighted users only had the
+placeholder. Required status was only revealed AFTER submit. Mark both fields properly.
+
+CONTEXT / WHY (WCAG 3.3.2 Labels or Instructions AA; 1.3.1 / 4.1.2)
+- This mirrors the page's own required-field pattern already used on step 1 (visible label +
+  aria-hidden red asterisk + required + aria-required, with a legend explaining the asterisk).
+
+FILE: Views/ActivityCenter/CreateVideoObservation.cshtml
+--------------------------------------------------------
+In the "Add New Link" modal body (#js-createObsLinkOverlay), replace the two field blocks.
+
+  FROM:
+    <span class="font-12 color-red-own js-createObsLinkError u-hasError-label" aria-hidden="true"></span>
+    <div style="padding:10px">
+        <label class="visually-hidden" for="js-createObsLinkUrl">Link URL</label>
+        <input type="text" class="form-control js-linkText" id="js-createObsLinkUrl"
+               maxlength="255" placeholder='Paste the link here. "http://www.website.com"' />
+    </div>
+    <div style="padding:10px">
+        <label class="visually-hidden" for="js-createObsLinkTitle">Display Text</label>
+        <input type="text" class="form-control js-textToDisplay" id="js-createObsLinkTitle"
+               maxlength="255" placeholder="Text to display" />
+    </div>
+
+  TO:
+    <span class="font-12 color-red-own js-createObsLinkError u-hasError-label" aria-hidden="true"></span>
+    <div class="mb-1" style="padding:0 10px">
+        <span class="font-12 gray-700-color" aria-hidden="true">(<span class="color-red-own">*</span> indicates a required field)</span>
+    </div>
+    <div style="padding:10px">
+        <label class="text-5 mb-2 gray-700-color" for="js-createObsLinkUrl">Link URL<span class="color-red-own" aria-hidden="true"> *</span></label>
+        <input type="text" class="form-control js-linkText" id="js-createObsLinkUrl"
+               maxlength="255" required aria-required="true" placeholder='Paste the link here. "http://www.website.com"' />
+    </div>
+    <div style="padding:10px">
+        <label class="text-5 mb-2 gray-700-color" for="js-createObsLinkTitle">Display Text<span class="color-red-own" aria-hidden="true"> *</span></label>
+        <input type="text" class="form-control js-textToDisplay" id="js-createObsLinkTitle"
+               maxlength="255" required aria-required="true" placeholder="Text to display" />
+    </div>
+
+NOTES
+----
+- AT gets "required" from aria-required; the asterisk + legend are aria-hidden (sighted-only) so
+  the screen reader does not announce a stray "star".
+- Do NOT add a visually-hidden "(required)" per field -- Narrator scan mode treats it as an orphan stop.
+- The native `required` does not trigger browser validation here (the modal confirms via a JS click
+  handler, not a native form submit); it is added for semantics. The existing JS validation
+  ("Please enter both fields." + URL-format check) is unchanged and still drives errors.
+- VISUAL CHANGE (intentional): two short visible labels + a one-line legend now appear in the modal.
+
+VERIFY
+------
+- Screen reader: each field announces "Link URL, required" / "Display Text, required".
+- Sighted: both fields show a red "*"; the "(* indicates a required field)" legend is visible.
+- Submitting empty still shows "Please enter both fields." (announced) -- behavior unchanged.
+</textarea>
+        </section>
+
+        <!-- ============ CHANGE 9 ============ -->
+        <section class="panel" id="panel9" hidden>
+            <div class="panel-head">
+                <h2>Change 9 &mdash; "Add New Link" modal: make background inert while open</h2>
+                <button type="button" class="copy" data-note="note9">Copy instructions</button>
+                <span class="status" data-status="note9" role="status" aria-live="polite"></span>
+            </div>
+            <textarea id="note9" readonly spellcheck="false">CHANGE REQUEST: "Add New Link" modal -- make the background inert while open
+Branch: qa
+Repo path prefix: src/AF.Web/
+
+GOAL
+----
+When the "Add New Link" modal is open, Narrator down-arrow scanning still wanders the whole dimmed
+page behind it, so the highlight "jumps" across background elements. Box scan + focus into the modal
+by making everything outside it inert while it is open.
+
+CONTEXT / WHY
+-------------
+- The overlay sets role="dialog" aria-modal="true" but the page was NOT made inert/aria-hidden when
+  it opened. The overlay is a sibling appended at the END of the DOM, after <header> and
+  .js-createVideoObservationView, so scan traverses all of that first. aria-modal is advisory and
+  Narrator's scan cursor does not reliably honor it.
+- inert removes a subtree from the accessibility tree (scan skips it) and blocks focus + clicks.
+  Chromium 102+ (Edge/Chrome) supported; older browsers ignore it and fall back to the JS Tab-trap.
+
+FILE: Views/ActivityCenter/CreateVideoObservation.cshtml
+--------------------------------------------------------
+In the inline script, find the custom overlay helpers (var _linkDialogTrigger ... openCreateObsLinkDialog
+... closeCreateObsLinkDialog).
+
+(1) Add a helper just before openCreateObsLinkDialog():
+    // Make the background (everything outside the modal overlay) inert while the dialog is open.
+    function setBackgroundInert(on) {
+        ['header', '.js-createVideoObservationView'].forEach(function (sel) {
+            var el = document.querySelector(sel);
+            if (!el) return;
+            if (on) { el.setAttribute('inert', ''); }
+            else { el.removeAttribute('inert'); }
+        });
+    }
+
+(2) In openCreateObsLinkDialog(), right AFTER the line that adds the 'active' class
+    ( $('#js-createObsLinkOverlay').addClass('active'); ), ADD:
+        setBackgroundInert(true);
+
+(3) In closeCreateObsLinkDialog(), right AFTER the line that removes the 'active' class
+    ( $('#js-createObsLinkOverlay').removeClass('active'); ), ADD:
+        setBackgroundInert(false);
+    IMPORTANT: this must run BEFORE focus is returned to the trigger (_linkDialogTrigger lives inside
+    the content being un-inerted; focusing an inert element would silently fail). The remove-active
+    line is already above the focus-return block, so adding it right there is correct.
+
+NOTES
+----
+- inert blocks USER interaction only, not script: the "Add Link" confirm still appends the new
+  resource item to the (briefly inert) list; on close the list is interactive again.
+- Do not also add aria-hidden (redundant with inert).
+
+VERIFY (with Narrator on)
+-------------------------
+- Open the modal, down-arrow scan: only the modal content is read; the cursor no longer jumps into
+  the dimmed background page.
+- Tab/Shift+Tab stays inside the modal; Esc / Cancel / X / backdrop close it.
+- On close, focus returns to the "Add Link" trigger; background is interactive and scannable again.
+</textarea>
+        </section>
+
+        <!-- ============ CHANGE 10 ============ -->
+        <section class="panel" id="panel10" hidden>
+            <div class="panel-head">
+                <h2>Change 10 &mdash; "Add Documentation" rows: decorative "Complete" checkmark</h2>
+                <button type="button" class="copy" data-note="note10">Copy instructions</button>
+                <span class="status" data-status="note10" role="status" aria-live="polite"></span>
+            </div>
+            <textarea id="note10" readonly spellcheck="false">CHANGE REQUEST: "Add Documentation" resource rows -- decorative complete checkmark
+Branch: qa
+Repo path prefix: src/AF.Web/
+
+GOAL
+----
+After a link/file is added on the "Add Documentation" step, each resource row shows a green check
+image with alt="Complete", so screen readers announce "Complete graphic". The checkmark is purely
+decorative confirmation (the row already shows the link title + URL or file name + size, and being
+in the list IS the confirmation; there is no incomplete/failed checkmark state). Make it decorative.
+
+CONTEXT / WHY (WCAG 1.1.1 Non-text Content)
+- The same checkmark serves BOTH link and file rows (only the left icon differs). It is produced in
+  TWO places -- fix both so server-rendered and JS-added rows match.
+
+FILE: Views/ActivityCenter/CreateVideoObservation.cshtml
+--------------------------------------------------------
+(1) Server-rendered rows (Razor foreach over existing resources):
+  FROM:
+    <img src="/assets/media/images/TCImages/_Checkbox-base.png" alt="Complete"  >
+  TO:
+    <img src="/assets/media/images/TCImages/_Checkbox-base.png" alt="" aria-hidden="true" >
+
+(2) JS-added rows (inside the addCreateObsResourceItem() string builder):
+  FROM:
+    '<img alt="Complete" src="/assets/media/images/TCImages/_Checkbox-base.png">' +
+  TO:
+    '<img alt="" aria-hidden="true" src="/assets/media/images/TCImages/_Checkbox-base.png">' +
+
+(The third checkmark, in the hidden upload-progress UI, is already alt="" -- leave it.)
+
+NOTES
+----
+- Purely an accessible-name change; no visual change, no behavior change. The checkmark still shows.
+- Also removes one announced node per resource row (slightly less scan-mode noise).
+
+VERIFY
+------
+- Add a link AND upload a file, then scan/focus across each row: screen reader no longer says
+  "Complete graphic"; it reads the title + URL (link) or file name + size (file) only.
+- Existing (page-load) rows behave the same. Checkmark still visible.
+</textarea>
+        </section>
+
+        <!-- ============ CHANGE 11 ============ -->
+        <section class="panel" id="panel11" hidden>
+            <div class="panel-head">
+                <h2>Change 11 &mdash; Account Library "Add a Link" page: single true h1</h2>
+                <button type="button" class="copy" data-note="note11">Copy instructions</button>
+                <span class="status" data-status="note11" role="status" aria-live="polite"></span>
+            </div>
+            <textarea id="note11" readonly spellcheck="false">CHANGE REQUEST: Account Library "Add a Link" page -- one true h1, suppress the hidden header h1
+Branch: qa
+Repo path prefix: src/AF.Web/
+
+GOAL
+----
+On the Account Library "Add a Link" page (route /Resource/CreateUpdateResourceLink?groupAccountId=...),
+the visible "Add a Link" heading was an <h2>, and the page's only <h1> was the invisible one leaking
+from the header partial (it announced the account/library name, not the page). Suppress the leaking
+header h1 and promote the visible "Add a Link" title to <h1>. Keep everything visually identical.
+
+CONTEXT / WHY (WCAG 1.3.1 Info and Relationships / 2.4.6 Headings and Labels)
+- The header partial _HeaderTeachingChannel.cshtml (~line 953-955) renders
+  <h1 class="visually-hidden">@heading.MainHeading</h1> unless ViewBag.SuppressHiddenH1 == true.
+  heading.MainHeading here = "<Account> Library", so the only h1 named the library, not the page,
+  and screen-reader heading navigation landed on the hidden "...Library" h1 instead of "Add a Link".
+- @Html.Partial is given a NEW ViewDataDictionary, which does NOT inherit ViewBag.SuppressHiddenH1
+  from the page. The flag must be passed INSIDE that dictionary (classic Html.Partial-blocks-ViewBag).
+- Heading text styling is class-driven: .text-3 sets the font size/weight, so swapping the tag
+  (h2 -> h1) does NOT change appearance.
+- The header band's other h1s (~lines 450/457/462) are all commented out, so nothing else competes.
+
+FILE: Views/Resource/CreateUpdateResourceLink.cshtml
+----------------------------------------------------
+(1) ~Line 22 -- suppress the leaking hidden h1 by passing the flag inside the partial dictionary:
+  FROM:
+    @Html.Partial("_HeaderTeachingChannel", new ViewDataDictionary { { "Heading", heading } })
+  TO:
+    @Html.Partial("_HeaderTeachingChannel", new ViewDataDictionary { { "Heading", heading }, { "SuppressHiddenH1", true } })
+
+(2) ~Line 35 -- promote the visible page title from h2 to h1:
+  FROM:
+    <h2 class="text-3 mb-0">Add a Link</h2>
+  TO:
+    <h1 class="text-3 mb-0">Add a Link</h1>
+
+EXPECTED END STATE (heading outline of the page)
+------------------------------------------------
+  h1 "Add a Link"   <-- the only heading title; screen readers read this
+  (the invisible "...Library" h1 is gone)
+
+NOTES
+----
+- No visual change: .text-3 controls the heading font size for both h1 and h2; existing mb-0 / reboot
+  reset default margins, so spacing is unchanged.
+- Same pattern already shipped on CreateUpdateResourceVideo (Change 4), CreateVideoObservation
+  (Change 5), TC/Detail (Change 1), etc.
+
+VERIFY
+------
+- Screen-reader heading list / "next heading" lands on a single visible "Add a Link" h1; the
+  invisible "...Library" h1 is gone.
+- Page looks identical to before.
+</textarea>
+        </section>
+
+        <!-- ============ CHANGE 12 ============ -->
+        <section class="panel" id="panel12" hidden>
+            <div class="panel-head">
+                <h2>Change 12 &mdash; Account Library "Upload a File" page: single true h1</h2>
+                <button type="button" class="copy" data-note="note12">Copy instructions</button>
+                <span class="status" data-status="note12" role="status" aria-live="polite"></span>
+            </div>
+            <textarea id="note12" readonly spellcheck="false">CHANGE REQUEST: Account Library "Upload a File" page -- one true h1, suppress the hidden header h1
+Branch: qa
+Repo path prefix: src/AF.Web/
+
+GOAL
+----
+On the Account Library "Upload a File" page (route /Resource/CreateUpdateResourceFile?groupAccountId=...),
+the visible "Upload a File" heading was an <h2>, and the page's only <h1> was the invisible one leaking
+from the header partial (it announced the account/library name, not the page). Suppress the leaking
+header h1 and promote the visible "Upload a File" title to <h1>. Keep everything visually identical.
+(This is the exact sibling of Change 11, the "Add a Link" page.)
+
+CONTEXT / WHY (WCAG 1.3.1 Info and Relationships / 2.4.6 Headings and Labels)
+- The header partial _HeaderTeachingChannel.cshtml (~line 953-955) renders
+  <h1 class="visually-hidden">@heading.MainHeading</h1> unless ViewBag.SuppressHiddenH1 == true.
+  heading.MainHeading here = "<Account> Library", so the only h1 named the library, not the page,
+  and screen-reader heading navigation landed on the hidden "...Library" h1 instead of "Upload a File".
+- @Html.Partial is given a NEW ViewDataDictionary, which does NOT inherit ViewBag.SuppressHiddenH1
+  from the page. The flag must be passed INSIDE that dictionary (classic Html.Partial-blocks-ViewBag).
+- Heading text styling is class-driven: .text-3 sets the font size/weight and .modal-title zeroes
+  margin-bottom, so swapping the tag (h2 -> h1) does NOT change appearance.
+- The header band's other h1s (~lines 450/457/462) are all commented out, so nothing else competes.
+
+FILE: Views/Resource/CreateUpdateResourceFile.cshtml
+----------------------------------------------------
+(1) ~Line 31 -- suppress the leaking hidden h1 by passing the flag inside the partial dictionary:
+  FROM:
+    @Html.Partial("_HeaderTeachingChannel", new ViewDataDictionary { { "Heading", heading } })
+  TO:
+    @Html.Partial("_HeaderTeachingChannel", new ViewDataDictionary { { "Heading", heading }, { "SuppressHiddenH1", true } })
+
+(2) ~Line 50 -- promote the visible page title from h2 to h1:
+  FROM:
+    <h2 class="modal-title text-3">Upload a File</h2>
+  TO:
+    <h1 class="modal-title text-3">Upload a File</h1>
+
+EXPECTED END STATE (heading outline of the page)
+------------------------------------------------
+  h1 "Upload a File"   <-- the only heading title; screen readers read this
+  (the invisible "...Library" h1 is gone)
+
+NOTES
+----
+- No visual change: .text-3 controls the heading font size for both h1 and h2; .modal-title sets
+  margin-bottom:0 and reboot zeroes margin-top, so spacing is unchanged.
+- Same pattern already shipped on CreateUpdateResourceLink (Change 11), CreateUpdateResourceVideo
+  (Change 4), CreateVideoObservation (Change 5), TC/Detail (Change 1), etc.
+
+VERIFY
+------
+- Screen-reader heading list / "next heading" lands on a single visible "Upload a File" h1; the
+  invisible "...Library" h1 is gone.
+- Page looks identical to before.
+</textarea>
+        </section>
+
+        <!-- ============ CHANGE 13 ============ -->
+        <section class="panel" id="panel13" hidden>
+            <div class="panel-head">
+                <h2>Change 13 &mdash; Library Reports: per-report headings (active-only)</h2>
+                <button type="button" class="copy" data-note="note13">Copy instructions</button>
+                <span class="status" data-status="note13" role="status" aria-live="polite"></span>
+            </div>
+            <textarea id="note13" readonly spellcheck="false">CHANGE REQUEST: Library Reports -- give each report a heading, exposing only the active one
+Branch: qa
+Repo path prefix: src/AF.Web/
+
+GOAL (WCAG 1.3.1 Info and Relationships / 2.4.6 Headings and Labels)
+On the Library Reports page (route /Report/Resource), the two report tab panels
+("Usage Statistics", "Videos Watched") had no heading, so a screen-reader user navigating by
+heading could not jump to the current report. Give each report a heading and expose ONLY the
+active report's heading (H key lands on exactly one "current report" heading).
+
+WHY A VISUALLY-HIDDEN HEADING IN THE PANEL (not a heading on the tab label)
+- The labels are Bootstrap tab anchors: <a role="tab" data-toggle="tab" ...>. An element cannot be
+  BOTH a tab and a heading (one role per element). Two nestings were tried and both misbehave in
+  Narrator:
+    * h2 WRAPPING the tab (h2 > a): the heading interrupts the tablist -> tab ownership chain, so
+      the active tab miscounts as "tab 1 of 1" (even an explicit aria-setsize is ignored).
+    * h2 INSIDE the tab (a > h2): count is correct, but because the heading is the tab's sole
+      content, Narrator scan mode stops on the tab AND the heading and announces "heading level 2"
+      on BOTH stops -- a redundant double announcement.
+  A heading is always its own scan stop, so the cleanest result is to keep the heading OUT of the
+  tab: a visually-hidden <h2> at the top of each tabpanel. The tabs stay plain (correct "1 of 2"
+  count, single clean tab read) and each report gets exactly one heading.
+
+"ACTIVE ONLY" COMES FOR FREE (no JS)
+Bootstrap renders the inactive .tab-pane as display:none (only .show.active is shown). A
+display:none subtree is removed from the accessibility tree, so the inactive panel's <h2> is NOT
+exposed. Heading navigation therefore lands on exactly the active report's heading, with zero JS.
+
+FILE: Views/Report/Resource.cshtml
+----------------------------------
+Add a visually-hidden <h2> as the first child of each tabpanel. Leave the tab anchors exactly as
+the app shipped them (plain <a role="tab">, no h2 wrapper, no aria-posinset/aria-setsize, no JS).
+
+  FROM:
+    <div class="tab-pane fade show active" id="usage-statistics" role="tabpanel" aria-labelledby="usage-statistics-tab">
+        @@Html.Partial("_ResourceUsageStatistics")
+    </div>
+    <div class="tab-pane fade" id="resource-Videos-Watched" role="tabpanel" aria-labelledby="resource-Videos-Watched">
+        @@Html.Partial("_ResourceVideoViewsStatistics")
+    </div>
+
+  TO:
+    <div class="tab-pane fade show active" id="usage-statistics" role="tabpanel" aria-labelledby="usage-statistics-tab">
+        <h2 class="visually-hidden">Usage Statistics</h2>
+        @@Html.Partial("_ResourceUsageStatistics")
+    </div>
+    <div class="tab-pane fade" id="resource-Videos-Watched" role="tabpanel" aria-labelledby="resource-Videos-Watched">
+        <h2 class="visually-hidden">Videos Watched</h2>
+        @@Html.Partial("_ResourceVideoViewsStatistics")
+    </div>
+
+NOTES
+----
+- .visually-hidden (Content/style/style.css) keeps the heading off-screen but in the accessibility
+  tree. No visual change.
+- The heading's scan highlight sits at the start of the panel content (where the heading lives),
+  not on the visible tab -- this is the correct/least-noisy behavior; nesting the heading on the
+  tab caused the Narrator double "heading level 2" described above.
+
+VERIFY
+------
+- Screen-reader heading list shows ONE report heading = the active report ("Usage Statistics" by
+  default). Switch to "Videos Watched": the list now shows "Videos Watched" only.
+- Tab onto the tabs: "Usage Statistics, tab, 1 of 2" / "Videos Watched, tab, 2 of 2" -- single
+  clean read, no "heading level 2" doubling.
+- Page looks identical to before.
+</textarea>
+        </section>
+
+        <!-- ============ CHANGE 14 ============ -->
+        <section class="panel" id="panel14" hidden>
+            <div class="panel-head">
+                <h2>Change 14 &mdash; Activity Reports: hidden h1 text + per-report headings</h2>
+                <button type="button" class="copy" data-note="note14">Copy instructions</button>
+                <span class="status" data-status="note14" role="status" aria-live="polite"></span>
+            </div>
+            <textarea id="note14" readonly spellcheck="false">CHANGE REQUEST: Activity Reports -- fix the hidden h1 text and give each report a heading
+Branch: qa
+Repo path prefix: src/AF.Web/
+
+GOAL (WCAG 1.3.1 Info and Relationships / 2.4.6 Headings and Labels)
+On the Activity Reports page (route /Report; tabs: Activity Statistics / Videos Shared /
+Videos Submitted / Instructional Focus / Assignments / Observation Data Report):
+1. The page's hidden h1 announced just "Reports" -- make it "Activity Reports" to match the
+   visible page / browser-tab title.
+2. The six report tab panels had no heading, so a screen-reader user navigating by heading could
+   not jump to the current report. Give each report an <h2> and expose ONLY the active report's
+   heading.
+
+--------------------------------------------------------------------------------
+PART 1 -- Hidden h1 text
+--------------------------------------------------------------------------------
+FILE: Views/Report/Index.cshtml (~line 15)
+The header partial renders <h1 class="visually-hidden">@@heading.MainHeading</h1>; MainHeading was
+"Reports".
+  FROM:
+    heading.MainHeading = "Reports";
+  TO:
+    heading.MainHeading = "Activity Reports";
+(SubHeading was already "Activity Reports". This page does NOT suppress the hidden h1, so it now
+announces "Activity Reports". MainHeading only feeds the hidden h1 -- the header band's visible h1s
+are commented out -- so no visual change.)
+
+--------------------------------------------------------------------------------
+PART 2 -- Per-report h2 headings (visually hidden, active-only)
+--------------------------------------------------------------------------------
+WHY A VISUALLY-HIDDEN HEADING IN THE PANEL (not a heading on the tab label)
+The tabs are custom <li role="tab" tabindex="0"> elements. An element cannot be BOTH a tab and a
+heading, and nesting a heading on the tab misbehaves in Narrator (either breaks the tab count or
+double-announces "heading level 2" -- same finding as the Library Reports change). So the heading
+goes at the top of each tabpanel's content instead: the tabs stay plain and each report gets exactly
+one heading.
+
+"ACTIVE ONLY" COMES FOR FREE (no JS)
+Each panel is a role="tabpanel" div; the inactive ones carry inline style="display:none" and the tab
+switch toggles display. A display:none subtree is removed from the accessibility tree, so only the
+visible panel's <h2> is exposed -- heading navigation lands on exactly the active report's heading,
+with zero JS.
+
+CHANGE: add <h2 class="visually-hidden">TabLabel</h2> as the FIRST child inside each panel's
+role="tabpanel" div (right before the inner <div class="usage-statistics-wrapper mb-32">). One h2
+per partial:
+
+  Views/Report/_VideoStatistics.cshtml       (#js-obs-video-stat-tab-div)      -> "Activity Statistics"
+  Views/Report/_VideosShared.cshtml          (#js-obs-video-shared-tab-div)    -> "Videos Shared"
+  Views/Report/_VideosSubmitted.cshtml       (#js-obs-video-submitted-tab-div) -> "Videos Submitted"
+  Views/Report/_InstructionalFocus.cshtml    (#js-obs-video-instfocus-tab-div) -> "Instructional Focus"
+  Views/Report/_ActivityAssignment.cshtml    (#js-obs-assignment-tab-div)      -> "Assignments"
+  Views/Report/_ObservationDataReport.cshtml (#js-obs-obs-report-data-tab-div) -> "Observation Data Report"
+
+  Example (_VideoStatistics.cshtml):
+  FROM:
+    <div id="js-obs-video-stat-tab-div" ... role="tabpanel" aria-labelledby="js-obs-video-stat-tab" tabindex="-1">
+        <div class="usage-statistics-wrapper mb-32">
+  TO:
+    <div id="js-obs-video-stat-tab-div" ... role="tabpanel" aria-labelledby="js-obs-video-stat-tab" tabindex="-1">
+        <h2 class="visually-hidden">Activity Statistics</h2>
+        <div class="usage-statistics-wrapper mb-32">
+
+NOTES
+----
+- .visually-hidden (Content/style/style.css) keeps the heading off-screen but in the a11y tree.
+  No visual change on any panel. Heading text mirrors each tab's visible label exactly.
+
+RESULTING HEADING OUTLINE
+  h1 "Activity Reports" (header, visually hidden)
+  h2 = the active report (swaps as tabs switch; only the visible one is exposed)
+
+VERIFY
+------
+- Heading list shows h1 "Activity Reports" + ONE h2 = the active report. Switch tabs -> the h2
+  swaps (e.g. "Videos Shared"); no stale/duplicate report headings appear.
+- Tabs still operate normally (click / Enter / Space; aria-selected updates); single clean tab read.
+- Page looks identical to before.
+</textarea>
+        </section>
+
+        <!-- ============ CHANGE 15 ============ -->
+        <section class="panel" id="panel15" hidden>
+            <div class="panel-head">
+                <h2>Change 15 &mdash; Activity Center search "&times;" clear button: keyboard + SR access</h2>
+                <button type="button" class="copy" data-note="note15">Copy instructions</button>
+                <span class="status" data-status="note15" role="status" aria-live="polite"></span>
+            </div>
+            <textarea id="note15" readonly spellcheck="false">CHANGE REQUEST: Activity Center search "x" clear button -- make it keyboard + screen-reader accessible
+Branch: qa
+Repo path prefix: src/AF.Web/
+
+GOAL (WCAG 2.1.1 Keyboard, 4.1.2 Name/Role/Value, 1.1.1 Non-text Content)
+On the Activity Center page (route /ActivityCenter; shared search across All Activities / Reflections
+/ Discussions / Submissions / Archive), the clear-search "x" was a bare
+<span id="customACClearButton">&times;</span>:
+- no tabindex / role -> not focusable, keyboard users could not reach or operate it (mouse-only);
+- no accessible name -> screen readers had nothing to announce;
+- raw &times; glyph -> Narrator reads it literally as "times";
+- visibility was mouse-driven only (mouseenter shows / mouseleave hides) plus `change` (fires on
+  blur), so even with a tabindex it would be display:none when a keyboard user arrived.
+
+FIX (mirrors the accessible pattern already shipped on PlaylistDetailItems.cshtml + _TCFilter.cshtml)
+
+1) MARKUP -- Views/ActivityCenter/_ActivityCenterFilter.cshtml (~line 31)
+   Give the span a button role + name + tab stop + Enter/Space handler, and wrap the glyph so it is
+   not announced as "times".
+   FROM:
+     <span id="customACClearButton" class="clear-ac-search-button" style="display:none">&times;</span>
+   TO:
+     <span id="customACClearButton" class="clear-ac-search-button" style="display:none" role="button" aria-label="Clear search" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();$(this).trigger('click');}"><span aria-hidden="true">&times;</span></span>
+
+2) BEHAVIOR -- Scripts/Pages/activityCenter.js (inside $(document).ready, ~line 135+)
+   (a) Reveal the button for keyboard users. The existing `change` fires only on blur and the
+       existing reveal is mouseenter-only, so add a keyup/focusin reveal. Because mouseleave only
+       fires for the mouse, once shown the button stays reachable while the user Tabs onto it.
+       Add right AFTER the `.js-activity-search-filter` change handler:
+
+         // Reveal the clear button for keyboard users: while typing (keyup) and when focusing a
+         // pre-filled search field or the button itself (focusin), mirroring the mouseenter reveal.
+         $(document).on('keyup focusin', '.js-activity-search-filter, #customACClearButton', function () {
+             if ($('.js-activity-search-filter').val() != '') {
+                 $('#customACClearButton').css('display', 'inline-flex');
+             }
+         });
+
+   (b) Return focus to the search field after clearing (the clear button hides itself, so focus
+       would otherwise fall to <body>). Add at the END of the '#customACClearButton' click handler,
+       right after the line that hides the button:
+
+         $('.js-activity-search-filter').focus();
+
+WHY THIS IS SAFE
+- Mouse behavior unchanged: mouseenter still reveals on hover, mouseleave still hides, click still
+  clears. The keyup/focusin reveal and the focus-return are additive.
+- onkeydown calls event.preventDefault() on Space so the page does not scroll when activating.
+- aria-label="Clear search" is the accessible name; the &times; is aria-hidden -> no "times" noise.
+
+VERIFY
+------
+- Type in the search field: the "x" appears. Tab once -> focus lands on it with a visible ring;
+  screen reader announces "Clear search, button".
+- Enter or Space clears the field, hides the "x", and returns focus to the search input.
+- Space does not scroll the page while the button is focused.
+- Mouse: hover shows, click clears, leave hides -- all unchanged.
+
+NOTE (not in this change -- same bare-span pattern elsewhere, future follow-ups)
+_ActivityCenterAssignment.cshtml (x2), Assignment/_SelectVideo.cshtml, TeachingChannel/AdminPlaylist.cshtml
+(x2), TeachingChannel/AdminGroup.cshtml, Admin/UserManagementNewDesign.cshtml (x3),
+Admin/UserAccountsManagement.cshtml, Admin/_AccountCohortType.cshtml still use the unfixed bare "x".
+</textarea>
+        </section>
     </div>
 
     <script>
         (function () {
             // Tab buttons toggle which change panel is visible.
             var tabs = document.querySelectorAll('button.tab');
+            function activateTab(tab) {
+                tabs.forEach(function (t) {
+                    var on = (t === tab);
+                    t.setAttribute('aria-pressed', on ? 'true' : 'false');
+                    document.getElementById(t.dataset.target).hidden = !on;
+                });
+            }
             tabs.forEach(function (tab) {
-                tab.addEventListener('click', function () {
-                    tabs.forEach(function (t) {
-                        var on = (t === tab);
-                        t.setAttribute('aria-pressed', on ? 'true' : 'false');
-                        document.getElementById(t.dataset.target).hidden = !on;
+                tab.addEventListener('click', function () { activateTab(tab); });
+            });
+
+            // Batch buttons swap which group of change buttons (1st vs 2nd batch) is shown,
+            // then auto-select the first change in the now-visible batch.
+            var batchBtns = document.querySelectorAll('button.batch');
+            var groups = document.querySelectorAll('.changes[data-batch-group]');
+            batchBtns.forEach(function (b) {
+                b.addEventListener('click', function () {
+                    var sel = b.dataset.batch;
+                    batchBtns.forEach(function (x) {
+                        x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
                     });
+                    groups.forEach(function (g) {
+                        g.hidden = (g.dataset.batchGroup !== sel);
+                    });
+                    var firstTab = document.querySelector('.changes[data-batch-group="' + sel + '"] button.tab');
+                    if (firstTab) { activateTab(firstTab); }
                 });
             });
 
